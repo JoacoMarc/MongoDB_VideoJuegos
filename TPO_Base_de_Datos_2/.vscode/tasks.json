@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flask: Start Server",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python3",
+      "args": ["TPOMongoPython.py"],        // <-- aquí el nuevo nombre
+      "isBackground": true,
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": {
+        "pattern": { "regexp": ".*", "file": 1, "message": 0 },
+        "background": {
+          "beginsPattern": ".*Running on http://0.0.0.0:5001.*",
+          "endsPattern": "Press CTRL\\+C to quit"
+        }
+      }
+    },
+    {
+      "label": "Flask: Stop Server",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "lsof -ti :5001 | xargs kill -9 || echo 'No flask on 5001'"
+      ]
+    },
+    {
+      "label": "CSV: Update",
+      "type": "shell",
+      "command": "curl",
+      "args": [
+        "http://localhost:5001/api/juegos.csv",
+        "-o",
+        "juegos.csv"
+      ]
+    }
+  ]
+}
