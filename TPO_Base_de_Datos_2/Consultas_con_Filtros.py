@@ -1,48 +1,43 @@
+
+import sys
 from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
+from pymongo.errors import ConnectionFailure, ConfigurationError
 
 def obtener_cliente_mongo(uri: str) -> MongoClient:
     try:
-        cliente = MongoClient(uri, serverSelectionTimeoutMS=5000)
-        cliente.admin.command('ping')  # Confirma conexión
+        cliente = MongoClient(
+            uri,
+            serverSelectionTimeoutMS=5000,  
+            connectTimeoutMS=5000,          
+            directConnection=True           
+        )
+        # Ping al servidor para validar la conexión
+        cliente.admin.command('ping')
         print("Conexión exitosa a MongoDB")
         return cliente
-    except ConnectionFailure as e:
-        print(f"No se pudo conectar a MongoDB: {e}")
-        raise
+    except (ConnectionFailure, ConfigurationError) as e:
+        print(f"Error conectando a MongoDB: {e}", file=sys.stderr)
+        sys.exit(1)
 
-# Configuración principal
-url_mongo = "mongodb://localhost:27017"
-nombre_db = "Videojuegos"
-nombre_coleccion = "Videojuegos"
-# Conectar y usar la colección
-cliente = obtener_cliente_mongo(url_mongo)
-db = cliente[nombre_db]
-coleccion = db[nombre_coleccion]
-lista_dbs = cliente.list_database_names()
+def main():
+    
+    # URI completo con usuario/clave. Asegúrate de no comprometer esta cadena.
+    url_mongo = (
+        "mongodb://root:yF0wB3iLa57VzZztO0ReI22GYELMkQF3Xz9kedSWJ6HYQ1d6dSDEzODNfIOei4nd"
+        "@188.245.255.235:5437"
+        "/?authSource=admin&directConnection=true"
+    )
 
-print(lista_dbs)
+    nombre_db = "Videojuegos"
+    nombre_coleccion = "Videojuegos"
 
-#CONSULTAS CON FILTROS
-ocultar= { "_id": 0 , "plataformas":0,"calificacion":0,"desarrollador":0}
+    cliente = obtener_cliente_mongo(url_mongo)
+    db = cliente[nombre_db]
+    coleccion = db[nombre_coleccion]
 
-print("Juegos con genero Supervivencia: ")
-print()
-for documento in coleccion.find( { "genero": "Supervivencia"},ocultar):
-    print(documento)
 
-print()
-print("Juegos con fecha de lanzamiento posterior a 2015: ")
-print()
-for documento in coleccion.find({ "anio_de_lanzamiento": { "$gt": 2015 } },ocultar):
-    print (documento)
+    # Listar bases de datos disponibles
+    print("Bases de datos disponibles:", cliente.list_database_names())
 
-print()
-print("Juegos desarrollados por Nintendo:\n")
-for doc in coleccion.find({"desarrollador": "Nintendo"}, ocultar):
-    print(doc)
-
-print()
-print("Juegos con calificación mayor o igual a 9.5:\n")
-for doc in coleccion.find({"calificacion": { "$gte": 9.5 }}, ocultar):
-    print(doc)
+if __name__ == "__main__":
+    main()
