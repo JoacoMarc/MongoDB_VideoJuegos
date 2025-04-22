@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>WDC Juegos MongoDB</title>
+  <!-- Favicon vacío para evitar 404 -->
+  <link rel="icon" href="data:;base64,=">
+  <!-- PapaParse para CSV robusto -->
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Biblioteca WDC de Tableau -->
+  <script src="https://connectors.tableau.com/libs/tableauwdc-2.3.latest.js"></script>
+  <script>
+    (function() {
+      const WDC_URL = new URL(window.location).searchParams.get("api")
+                        || "http://127.0.0.1:5001/api/juegos.csv";
+      console.log("WDC: URL =", WDC_URL);
+
+      const myConnector = tableau.makeConnector();
+
+      myConnector.getSchema = function(cb) {
+        console.log("WDC: getSchema");
+        const cols = [
+          { id:"titulo",            dataType:tableau.dataTypeEnum.string },
+          { id:"desarrollador",     dataType:tableau.dataTypeEnum.string },
+          { id:"descripcion",       dataType:tableau.dataTypeEnum.string },
+          { id:"anio_de_lanzamiento",dataType:tableau.dataTypeEnum.int   },
+          { id:"calificacion",      dataType:tableau.dataTypeEnum.float },
+          { id:"plataformas",       dataType:tableau.dataTypeEnum.string },
+          { id:"genero",            dataType:tableau.dataTypeEnum.string }
+        ];
+        cb([{ id:"juegosSchema", alias:"Juegos desde MongoDB", columns:cols }]);
+      };
+
+      myConnector.getData = function(table, done) {
+        console.log("WDC: getData");
+        fetch(WDC_URL)
+          .then(r => { if(!r.ok) throw new Error(r.status); return r.text(); })
+          .then(text => {
+            console.log("WDC: CSV descargado");
+            Papa.parse(text, {
+              header: true,
+              skipEmptyLines: true,
+              complete: results => {
+                console.log("WDC: Filas =", results.data.length);
+                const rows = results.data.map(r => ({
+                  titulo: r.titulo,
+                  desarrollador: r.desarrollador,
+                  descripcion: r.descripcion,
+                  anio_de_lanzamiento: parseInt(r.anio_de_lanzamiento, 10),
+                  calificacion: parseFloat(r.calificacion),
+                  plataformas: r.plataformas,
+                  genero: r.genero
+                }));
+                table.appendRows(rows);
+                done();
+              },
+              error: err => { console.error("PapaParse error:", err); done(); }
+            });
+          })
+          .catch(err => { console.error("Fetch error:", err); done(); });
+      };
+
+      tableau.registerConnector(myConnector);
+
+      // Esperamos a que el usuario haga clic
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("fetchBtn")
+                .addEventListener("click", () => {
+          console.log("WDC: botón clic → submit()");
+          tableau.connectionName = "JuegosMongoDB";
+          tableau.submit();
+        });
+      });
+    })();
+  </script>
+  <style>
+    body { font-family:sans-serif; padding:1rem; }
+    #fetchBtn {
+      background:#0071C5; color:white; border:none;
+      padding:0.75rem 1.5rem; font-size:1rem;
+      border-radius:4px; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Conector Tableau – Juegos MongoDB</h1>
+  <p>Pulsa el botón para importar los datos desde tu API Flask:</p>
+  <button id="fetchBtn">Obtener datos</button>
+</body>
+</html>
