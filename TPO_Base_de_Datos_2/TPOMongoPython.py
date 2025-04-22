@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 #  Carga variables de entorno (.env)
 load_dotenv()
 
-# (Opcional) Debug de variables cargadas
+#  Debug de variables cargadas
 print("DEBUG MONGO_URI:", os.getenv("MONGO_URI"))
 print("DEBUG DB_NAME: ", os.getenv("DB_NAME"))
 print("DEBUG COLL_NAME:", os.getenv("COLL_NAME"))
@@ -38,7 +38,7 @@ MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME   = os.getenv("DB_NAME", "Videojuegos")
 COLL_NAME = os.getenv("COLL_NAME", "Videojuegos")
 
-# Crear app Flask y habilitar CORS
+# Crear app Flask 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
@@ -75,7 +75,7 @@ def juego_por_titulo(titulo):
         abort(404, "Juego no encontrado")
     return jsonify(juego)
 
-
+# Funcion opcional para exportar en CSV
 @app.route("/api/juegos.csv", methods=["GET"])
 def exportar_csv():
     si   = StringIO()
