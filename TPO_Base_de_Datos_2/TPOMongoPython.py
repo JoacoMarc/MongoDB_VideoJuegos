@@ -1,9 +1,7 @@
 
 import os
 import sys
-import csv
-from io import StringIO
-from flask import Flask, jsonify, request, abort, Response
+from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ConfigurationError
@@ -11,11 +9,6 @@ from dotenv import load_dotenv
 
 #  Carga variables de entorno (.env)
 load_dotenv()
-
-#  Debug de variables cargadas
-print("DEBUG MONGO_URI:", os.getenv("MONGO_URI"))
-print("DEBUG DB_NAME: ", os.getenv("DB_NAME"))
-print("DEBUG COLL_NAME:", os.getenv("COLL_NAME"))
 
 # Función para obtener cliente Mongo
 def obtener_cliente_mongo(uri: str) -> MongoClient:
@@ -74,37 +67,6 @@ def juego_por_titulo(titulo):
     if not juego:
         abort(404, "Juego no encontrado")
     return jsonify(juego)
-
-# Funcion opcional para exportar en CSV
-@app.route("/api/juegos.csv", methods=["GET"])
-def exportar_csv():
-    si   = StringIO()
-    cols = [
-        "titulo",
-        "desarrollador",
-        "descripcion",
-        "anio_de_lanzamiento",
-        "calificacion",
-        "plataformas",
-        "genero"
-    ]
-    writer = csv.DictWriter(si, fieldnames=cols)
-    writer.writeheader()
-
-    for j in coleccion.find({}, {"_id": 0}):
-        writer.writerow({
-            "titulo":               j.get("titulo", ""),
-            "desarrollador":        j.get("desarrollador", ""),
-            "descripcion":          j.get("descripcion", ""),
-            "anio_de_lanzamiento":  j.get("anio_de_lanzamiento", ""),
-            "calificacion":         j.get("calificacion", ""),
-            # Convertimos los arrays en strings separados por “;”
-            "plataformas":          ";".join(j.get("plataformas", [])),
-            "genero":               ";".join(j.get("genero", [])),
-        })
-
-    return Response(si.getvalue(), mimetype="text/csv")
-
 
 # Manejadores de error
 @app.errorhandler(404)
